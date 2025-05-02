@@ -37,7 +37,7 @@ Projeto baseado em estoque de bebidas, feito para gerenciar as bebidas usando pr
       Proteger as contas de usuário usando o Firebase Authentication.
       Garantir que dados sensíveis (como CPF, se armazenados) sejam manuseados com cuidado.
   . Performance:
-      O aplicativo deve carregar as listas de bebidas, estoque, funcionários e clientes rapidamente, mesmo com um grande volume de dados. A estrutura dos seus dados no RTDB impacta diretamente a performance.
+      O aplicativo deve carregar as listas de bebidas, estoque, funcionários e clientes rapidamente, mesmo com um grande volume de dados. A estrutura dos dados no RTDB impacta diretamente a performance.
       Operações de leitura e escrita devem ser ágeis.
   . Escalabilidade:
       O aplicativo deve ser capaz de lidar com um número crescente de bebidas, itens de estoque, funcionários e clientes ao longo do tempo. O Firebase RTDB é projetado para escalar automaticamente.
