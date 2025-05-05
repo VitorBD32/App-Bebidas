@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "469393720381",
+    "firebase_url": "https://app-de-bebidas-826aa-default-rtdb.firebaseio.com",
+    "project_id": "app-de-bebidas-826aa",
+    "storage_bucket": "app-de-bebidas-826aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:469393720381:android:76999e0cd2e04f1ed0d654",
+        "android_client_info": {
+          "package_name": "com.example.app_de_bebidas"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "469393720381-jpgrbaa4bqvkiom6p60ivsrpcigah1s8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5DJ7rfU2oKM9bFr0m3Zu5HzC3nHitwfk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "469393720381-jpgrbaa4bqvkiom6p60ivsrpcigah1s8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "469393720381-r6tbsoi1k9e76rfsp0v8g7ul70bqb8sk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appDeBebidas"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
