@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'screens/auth/inicio.dart'; // <-- Corrigido aqui
+import 'LoginScreen.dart'; // Corrija o caminho para o arquivo correto
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const InicioScreen(),
+      home: const LoginScreen(), // Alterando para a tela correta
     );
   }
 }
