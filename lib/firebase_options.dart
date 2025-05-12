@@ -67,7 +67,8 @@ class DefaultFirebaseOptions {
     projectId: 'app-de-bebidas-826aa',
     databaseURL: 'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com',
     storageBucket: 'app-de-bebidas-826aa.firebasestorage.app',
-    iosClientId: '469393720381-r6tbsoi1k9e76rfsp0v8g7ul70bqb8sk.apps.googleusercontent.com',
+    iosClientId:
+        '469393720381-r6tbsoi1k9e76rfsp0v8g7ul70bqb8sk.apps.googleusercontent.com',
     iosBundleId: 'com.example.appDeBebidas',
   );
 
@@ -78,7 +79,8 @@ class DefaultFirebaseOptions {
     projectId: 'app-de-bebidas-826aa',
     databaseURL: 'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com',
     storageBucket: 'app-de-bebidas-826aa.firebasestorage.app',
-    iosClientId: '469393720381-r6tbsoi1k9e76rfsp0v8g7ul70bqb8sk.apps.googleusercontent.com',
+    iosClientId:
+        '469393720381-r6tbsoi1k9e76rfsp0v8g7ul70bqb8sk.apps.googleusercontent.com',
     iosBundleId: 'com.example.appDeBebidas',
   );
 
@@ -92,5 +94,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'app-de-bebidas-826aa.firebasestorage.app',
     measurementId: 'G-M67CJK85NG',
   );
-
 }

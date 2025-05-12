@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'CriarContaScreen.dart'; // Tela de criação de conta
 import 'principalCliente.dart'; // Tela principal para o cliente
-import 'principalFuncionario.dart'; // Tela principal para o funcionário
+import 'FuncionarioScreen.dart'; // Tela principal para o funcionário
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -86,9 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (tipoUsuario == "Funcionário") {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => const PrincipalFuncionarioScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const FuncionarioScreen()),
           );
         }
       }
