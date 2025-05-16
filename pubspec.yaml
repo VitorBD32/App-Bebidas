@@ -19,6 +19,11 @@ dependencies:
   flutter_local_notifications: ^19.1.0
   shared_preferences: ^2.0.15
   http: ^1.3.0
+  google_maps_flutter: ^2.11.0
+  geocoding: ^3.0.0
+  excel: ^2.0.5
+  path_provider: ^2.0.10
+  file_picker: ^5.2.5
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // Para usar json.decode
+import 'dart:convert';
+import 'dart:async'; // Para utilizar Timer
+import 'AdicionarBebidaScreen.dart'; // Importando a tela de adicionar bebida
+import 'package:excel/excel.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class FuncionarioScreen extends StatefulWidget {
   const FuncionarioScreen({Key? key}) : super(key: key);
@@ -11,207 +16,335 @@ class FuncionarioScreen extends StatefulWidget {
 
 class _FuncionarioScreenState extends State<FuncionarioScreen> {
   List<Map> bebidas = [];
-  List<String> categorias = [];
-  final _nomeController = TextEditingController();
-  final _precoController = TextEditingController();
-  final _estoqueController = TextEditingController();
-  String? _selectedCategoria;
-  String?
-  _selectedTipo; // Tipo de bebida selecionado (cerveja, energético, etc.)
-  bool _isAdding = false; // Controla a visibilidade do formulário
-
-  // URL do seu Realtime Database no Firebase
+  List<Map> bebidasFiltradas = [];
+  bool _isLoading = true;
+  String _selectedCategoria = 'Todas';
+  String _searchQuery = '';
   final String apiUrl =
       'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com/bebidas.json';
 
-  // Função para obter as categorias e as bebidas do banco de dados
-  Future<void> _getBebidasECategorias() async {
+  // Definir o Timer
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarBebidas(); // Inicia o auto-refresh
+  }
+
+  // Função para carregar as bebidas ao iniciar
+  void _carregarBebidas() async {
     try {
-      final response = await http.get(Uri.parse(apiUrl));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        setState(() {
-          // Obter as categorias com base nas chaves do banco
-          categorias = List<String>.from(data.keys);
-        });
-      } else {
-        throw Exception('Falha ao carregar dados');
-      }
+      List<Map> bebidasList = await _getBebidas();
+      setState(() {
+        bebidas = bebidasList;
+        bebidasFiltradas = bebidas;
+        _isLoading = false;
+      });
     } catch (e) {
-      print('Erro ao buscar dados: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Erro ao carregar dados')));
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar bebidas: $e')));
     }
   }
 
-  // Função para adicionar uma nova bebida
-  void _adicionarBebida() async {
-    final nome = _nomeController.text.trim();
-    final preco = _precoController.text.trim();
-    final estoque = int.tryParse(_estoqueController.text.trim()) ?? 0;
+  // Função para carregar as bebidas do Firebase
+  Future<List<Map>> _getBebidas() async {
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
 
-    // Verifica se todos os campos obrigatórios estão preenchidos
-    if (nome.isEmpty ||
-        preco.isEmpty ||
-        estoque <= 0 ||
-        _selectedCategoria == null ||
-        _selectedTipo == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor, preencha todos os campos corretamente.'),
+        // Verifica se o Firebase retorna dados em formato Map
+        if (data is Map) {
+          // Verifica se os dados possuem entradas
+          return data.entries.map((entry) {
+            // Cada 'entry.value' será um mapa com os dados da bebida
+            final bebida = entry.value;
+
+            // Verifica se a bebida é um Map e se contém as chaves esperadas
+            if (bebida is Map) {
+              return Map<String, dynamic>.from(bebida)..['id'] = entry.key;
+            } else {
+              return {}; // Caso não seja um Map, retorna um mapa vazio
+            }
+          }).toList();
+        } else {
+          throw Exception('Dados retornados estão no formato inesperado.');
+        }
+      } else {
+        throw Exception('Falha ao carregar bebidas');
+      }
+    } catch (e) {
+      throw Exception('Erro ao buscar bebidas: $e');
+    }
+  }
+
+  // Função para filtrar as bebidas
+  void _filtrarBebidas() {
+    setState(() {
+      bebidasFiltradas =
+          bebidas.where((bebida) {
+            // Filtro pelo nome
+            bool matchesNome = bebida['nome'].toLowerCase().contains(
+              _searchQuery.toLowerCase(),
+            );
+
+            // Filtro pela categoria
+            bool matchesCategoria =
+                _selectedCategoria == 'Todas' ||
+                bebida['categoria'] == _selectedCategoria;
+
+            return matchesNome && matchesCategoria;
+          }).toList();
+    });
+  }
+
+  // Função para excluir bebida do Firebase
+  Future<void> _excluirBebida(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(
+          'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com/bebidas/$id.json',
         ),
       );
-      return;
+      if (response.statusCode == 200) {
+        _carregarBebidas(); // Recarrega após excluir
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bebida excluída com sucesso!')),
+        );
+      } else {
+        throw Exception('Falha ao excluir bebida');
+      }
+    } catch (e) {
+      throw Exception('Erro ao excluir bebida: $e');
     }
+  }
 
-    // Criar um ID único para a bebida
-    final String bebidaId = DateTime.now().millisecondsSinceEpoch.toString();
+  // Função para editar a bebida no Firebase
+  void _editarBebida(Map bebida, String id) {
+    TextEditingController nomeController = TextEditingController(
+      text: bebida['nome'],
+    );
+    TextEditingController precoController = TextEditingController(
+      text: bebida['preco'],
+    );
+    TextEditingController estoqueController = TextEditingController(
+      text: bebida['estoque'].toString(),
+    );
+    TextEditingController descricaoController = TextEditingController(
+      text: bebida['descricao'] ?? '',
+    );
+    TextEditingController volumeController = TextEditingController(
+      text: bebida['volume'] ?? '',
+    );
 
-    // Criar o objeto de bebida conforme o tipo de bebida selecionado
-    final bebida = {'nome': nome, 'preco': preco, 'estoque': estoque};
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Editar Bebida'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nomeController,
+                decoration: const InputDecoration(labelText: 'Nome da Bebida'),
+              ),
+              TextField(
+                controller: precoController,
+                decoration: const InputDecoration(labelText: 'Preço'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: estoqueController,
+                decoration: const InputDecoration(labelText: 'Estoque'),
+                keyboardType: TextInputType.number,
+              ),
+              TextField(
+                controller: descricaoController,
+                decoration: const InputDecoration(labelText: 'Descrição'),
+              ),
+              TextField(
+                controller: volumeController,
+                decoration: const InputDecoration(labelText: 'Volume'),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // Salva as alterações
+                Map updatedBebida = {
+                  'nome': nomeController.text,
+                  'preco': precoController.text,
+                  'estoque': int.tryParse(estoqueController.text) ?? 0,
+                  'descricao': descricaoController.text,
+                  'volume': volumeController.text,
+                };
+                _editarBebidaFirebase(id, updatedBebida);
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+              child: const Text('Salvar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo sem salvar
+              },
+              child: const Text('Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-    // Definindo os campos específicos para cada tipo de bebida
-    if (_selectedTipo == 'cervejas') {
-      bebida.addAll({
-        'descricao': '',
-        'estilo': {'IPA': '', 'Lager': '', 'Stout': '', 'Weiss': ''},
-        'marca': '',
-        'volume': '',
-      });
-    } else if (_selectedTipo == 'energético') {
-      bebida.addAll({'sabor': '', 'semAcucar': true, 'teorcafeina': ''});
-    } else if (_selectedTipo == 'refrigerante') {
-      bebida.addAll({'sabor': '', 'semAcucar': true});
-    } else if (_selectedTipo == 'sucos artificiais') {
-      bebida.addAll({'concentrado': true, 'sabor': ''});
-    } else if (_selectedTipo == 'vodka') {
-      bebida.addAll({'abv': 0, 'base': '', 'origem': ''});
-    } else if (_selectedTipo == 'whiskys') {
-      bebida.addAll({'abv': 0, 'idade': '', 'origem': '', 'tipo': ''});
-    }
-
-    // Enviar os dados para o Firebase
+  // Função para editar a bebida no Firebase
+  Future<void> _editarBebidaFirebase(String id, Map bebida) async {
     try {
-      final response = await http.post(
-        Uri.parse('$apiUrl/$bebidaId.json'),
+      // Usando PATCH para atualizar apenas os campos que foram alterados
+      final response = await http.patch(
+        Uri.parse(
+          'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com/bebidas/$id.json',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(bebida),
       );
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bebida adicionada com sucesso!')),
-        );
-        _getBebidasECategorias(); // Recarrega a lista de bebidas e categorias
+        // Atualiza a bebida local na lista
         setState(() {
-          _isAdding = false; // Fechar o formulário de adicionar bebida
+          // Encontra o índice da bebida editada
+          int index = bebidas.indexWhere((item) => item['id'] == id);
+          if (index != -1) {
+            // Atualiza a bebida na lista
+            bebidas[index] = {
+              ...bebidas[index],
+              ...bebida,
+            }; // Mantém o id e atualiza os campos modificados
+          }
         });
-        _nomeController.clear();
-        _precoController.clear();
-        _estoqueController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bebida editada com sucesso!')),
+        );
       } else {
-        throw Exception('Falha ao adicionar bebida');
+        throw Exception('Falha ao editar bebida');
       }
     } catch (e) {
-      print('Erro ao adicionar bebida: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Erro ao adicionar bebida')));
+      throw Exception('Erro ao editar bebida: $e');
     }
   }
 
-  // Função para cancelar o formulário de adição de bebida
-  void _cancelarAdicao() {
-    setState(() {
-      _isAdding = false; // Fechar o formulário de adicionar bebida
-    });
-    _nomeController.clear();
-    _precoController.clear();
-    _estoqueController.clear();
+  // Função para gerar relatório Excel
+  Future<void> _gerarRelatorioExcel() async {
+    var excel = Excel.createExcel();
+    Sheet sheet = excel['Sheet1'];
+
+    // Adiciona cabeçalho
+    sheet.appendRow(['Nome', 'Preço', 'Estoque', 'Volume']);
+
+    // Adiciona as bebidas ao relatório
+    for (var bebida in bebidas) {
+      sheet.appendRow([
+        bebida['nome'] ?? '',
+        bebida['preco'] ?? '0.00',
+        bebida['estoque']?.toString() ?? '0',
+        bebida['volume'] ?? '',
+      ]);
+    }
+
+    // Salva o arquivo Excel no dispositivo
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/relatorio_bebidas.xlsx');
+    await file.writeAsBytes(await excel.encode() ?? []);
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Relatório gerado com sucesso!')));
   }
 
   @override
-  void initState() {
-    super.initState();
-    _getBebidasECategorias(); // Obtém as bebidas e categorias ao iniciar a tela
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gerenciar Bebidas')),
+      appBar: AppBar(
+        title: const Text('Gerenciamento de Bebidas e Estoque'),
+        centerTitle: true,
+        backgroundColor: Colors.deepPurple,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            if (_isAdding) ...[
-              // Formulário de adição de bebida
-              DropdownButton<String>(
-                value: _selectedTipo,
-                hint: const Text('Escolha o tipo de bebida'),
-                items:
-                    categorias.map((categoria) {
-                      return DropdownMenuItem<String>(
-                        value: categoria,
-                        child: Text(categoria),
-                      );
-                    }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedTipo = newValue;
-                  });
-                },
+            // Barra de pesquisa por nome
+            TextField(
+              onChanged: (query) {
+                setState(() {
+                  _searchQuery = query;
+                  _filtrarBebidas();
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Pesquisar por nome',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
               ),
-              const SizedBox(height: 20),
-              if (_selectedTipo != null) ...[
-                TextField(
-                  controller: _nomeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome da Bebida',
-                  ),
-                ),
-                TextField(
-                  controller: _precoController,
-                  decoration: const InputDecoration(labelText: 'Preço'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: _estoqueController,
-                  decoration: const InputDecoration(labelText: 'Estoque'),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _adicionarBebida,
-                  child: const Text('Adicionar Bebida'),
-                ),
-                TextButton(
-                  onPressed: _cancelarAdicao,
-                  child: const Text('Cancelar'),
-                ),
-              ],
-            ] else ...[
-              // Exibindo a lista de bebidas
-              Expanded(
-                child:
-                    bebidas.isEmpty
-                        ? const Center(
-                          child: Text('Nenhuma bebida disponível.'),
-                        )
-                        : ListView.builder(
-                          itemCount: bebidas.length,
-                          itemBuilder: (context, index) {
-                            var bebida = bebidas[index];
-                            String nome =
-                                bebida['nome'] ?? 'Nome não disponível';
-                            String preco = bebida['preco'] ?? '0.00';
-                            String estoque = bebida['estoque'].toString();
-                            String bebidaId = bebida['id'];
+            ),
+            const SizedBox(height: 16),
 
-                            return ListTile(
+            // Filtro por categoria
+            DropdownButton<String>(
+              value: _selectedCategoria,
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedCategoria = newValue!;
+                  _filtrarBebidas();
+                });
+              },
+              items:
+                  <String>[
+                    'Todas',
+                    'Cerveja',
+                    'Whisky',
+                    'Vodka',
+                    'Refrigerante',
+                    'Energético',
+                    'Itens Variados',
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+            ),
+            const SizedBox(height: 16),
+
+            // Exibe a tabela de bebidas e estoque
+            Expanded(
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                        itemCount: bebidasFiltradas.length,
+                        itemBuilder: (context, index) {
+                          final bebida = bebidasFiltradas[index];
+                          String nome = bebida['nome'] ?? 'Nome não disponível';
+                          String preco = bebida['preco'] ?? '0.00';
+                          String estoque = bebida['estoque']?.toString() ?? '0';
+                          String id = bebida['id'] ?? '';
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
+                            child: ListTile(
                               title: Text(nome),
                               subtitle: Text(
                                 'Preço: R\$ $preco\nEstoque: $estoque',
@@ -222,41 +355,59 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                                   IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () {
-                                      // Exemplo de edição
+                                      _editarBebida(bebida, id);
                                     },
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () {
-                                      // Excluir bebida
+                                      _excluirBebida(id);
                                     },
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
-              ),
-            ],
-            // Barra de navegação inferior
-            BottomNavigationBar(
-              backgroundColor: const Color.fromARGB(255, 6, 8, 10),
-              selectedItemColor: const Color.fromARGB(255, 221, 37, 37),
-              unselectedItemColor: const Color.fromARGB(153, 37, 179, 68),
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.add),
-                  label: 'Adicionar Bebida',
+                            ),
+                          );
+                        },
+                      ),
+            ),
+            const SizedBox(height: 16),
+
+            // Botões de funcionalidades do funcionário
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    // Navegar para a tela de adicionar bebida
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdicionarBebidaScreen(),
+                      ),
+                    ).then((_) => _carregarBebidas());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 50,
+                    ),
+                  ),
+                  child: const Text('Adicionar Bebida'),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: _gerarRelatorioExcel,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 50,
+                    ),
+                  ),
+                  child: const Text('Gerar Relatório Excel'),
                 ),
               ],
-              onTap: (index) {
-                if (index == 1) {
-                  setState(() {
-                    _isAdding = true; // Ativar o modo de adicionar bebida
-                  });
-                }
-              },
             ),
           ],
         ),

@@ -1,8 +1,10 @@
+import 'package:app_de_bebidas/FuncionarioScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'CriarContaScreen.dart'; // Tela de criação de conta
 import 'principalCliente.dart'; // Tela principal para o cliente
-import 'FuncionarioScreen.dart'; // Tela principal para o funcionário
+import 'LoginScreenFuncionario.dart'; // Nova tela de login para funcionário
+import 'EsqueciSenhaScreen.dart'; // Tela de "Esqueci a Senha"
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -108,59 +110,175 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Função de login para funcionário
   void _loginFuncionario(BuildContext context) {
-    _login(context, "Funcionário");
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) =>
+                const LoginScreenFuncionario(), // Redireciona para a tela de login do funcionário
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'E-mail'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _senhaController,
-              decoration: const InputDecoration(labelText: 'Senha'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 40),
-            _isLoading
-                ? const CircularProgressIndicator() // Mostra o carregamento enquanto realiza o login
-                : Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed:
-                          _isLoading ? null : () => _loginCliente(context),
-                      child: const Text('Login como Cliente'),
+      appBar: AppBar(
+        title: const Text('Seja Bem-Vindo'),
+        centerTitle: true,
+        backgroundColor: Colors.deepPurple,
+        elevation: 0,
+      ),
+      body: Center(
+        // Centraliza o conteúdo na tela
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                // Logo ou imagem, se desejado
+                Icon(
+                  Icons.person,
+                  size: 100,
+                  color: Colors.deepPurple,
+                ), // Exemplo de ícone de logo
+
+                const SizedBox(height: 40),
+                // Campo de e-mail
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: TextField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'E-mail',
+                      hintText: 'Digite seu e-mail',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      prefixIcon: Icon(Icons.email, color: Colors.deepPurple),
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 20,
+                      ),
                     ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed:
-                          _isLoading ? null : () => _loginFuncionario(context),
-                      child: const Text('Login como Funcionário'),
-                    ),
-                    const SizedBox(height: 20),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CriarContaScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text('Criar nova conta'),
-                    ),
-                  ],
+                  ),
                 ),
-          ],
+                const SizedBox(height: 20),
+                // Campo de senha
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: TextField(
+                    controller: _senhaController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Senha',
+                      hintText: 'Digite sua senha',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      prefixIcon: Icon(Icons.lock, color: Colors.deepPurple),
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 20,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                // Botões de Login
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : Column(
+                      children: [
+                        ElevatedButton(
+                          onPressed:
+                              _isLoading ? null : () => _loginCliente(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 32,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: const Text(
+                            'Login como Cliente',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Align(
+                          // Posiciona o botão no canto superior direito
+                          alignment: Alignment.topRight,
+                          child: ElevatedButton(
+                            onPressed: () => _loginFuncionario(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 32,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: const Text(
+                              'Login como Funcionário',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CriarContaScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Criar nova conta',
+                            style: TextStyle(
+                              color: Colors.deepPurple,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const EsqueciSenhaScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Esqueci minha senha',
+                            style: TextStyle(
+                              color: Colors.deepPurple,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+              ],
+            ),
+          ),
         ),
       ),
     );

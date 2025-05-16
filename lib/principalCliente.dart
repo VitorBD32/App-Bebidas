@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:app_de_bebidas/Pedido.dart';
+import 'package:app_de_bebidas/LoginScreen.dart'; // Importa a tela de login
 
 class PrincipalClienteScreen extends StatefulWidget {
   const PrincipalClienteScreen({Key? key}) : super(key: key);
@@ -85,6 +87,12 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
       favoritos = [];
       pedidoStatus = 'Aguardando'; // Reseta o status do pedido
     });
+
+    // Redireciona para a tela de login
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 
   // Função para remover uma bebida do carrinho
@@ -127,12 +135,22 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bebidas - Cliente')),
+      appBar: AppBar(
+        title: const Text('Bebidas - Cliente'),
+        centerTitle: true,
+        backgroundColor: Colors.deepPurple,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Exibindo a lista de bebidas
+            Text(
+              'Escolha suas bebidas',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
             Expanded(
               child:
                   bebidas.isEmpty
@@ -147,103 +165,127 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
 
                           bool isFavorito = favoritos.contains(bebida);
 
-                          return ListTile(
-                            title: Text(nome),
-                            subtitle: Text('Preço: R\$ $preco'),
-                            leading:
-                                imagem.isNotEmpty
-                                    ? Image.network(imagem)
-                                    : const Icon(Icons.image_not_supported),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Ícone de favoritar
-                                IconButton(
-                                  icon: Icon(
-                                    isFavorito
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: isFavorito ? Colors.red : null,
-                                  ),
-                                  onPressed: () {
-                                    _adicionarRemoverFavoritos(bebida);
-                                  },
-                                ),
-                                // Ícone de remover do carrinho
-                                IconButton(
-                                  icon: const Icon(Icons.remove_shopping_cart),
-                                  onPressed: () {
-                                    _removerDoCarrinho(bebida);
-                                  },
-                                ),
-                              ],
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            onTap: () {
-                              // Adiciona a bebida ao carrinho
-                              _adicionarAoCarrinho(bebida);
-                            },
+                            elevation: 4,
+                            child: ListTile(
+                              title: Text(nome),
+                              subtitle: Text('Preço: R\$ $preco'),
+                              leading:
+                                  imagem.isNotEmpty
+                                      ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.network(
+                                          imagem,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                      : const Icon(Icons.image_not_supported),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      isFavorito
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: isFavorito ? Colors.red : null,
+                                    ),
+                                    onPressed: () {
+                                      _adicionarRemoverFavoritos(bebida);
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.remove_shopping_cart,
+                                    ),
+                                    onPressed: () {
+                                      _removerDoCarrinho(bebida);
+                                    },
+                                  ),
+                                ],
+                              ),
+                              onTap: () {
+                                _adicionarAoCarrinho(bebida);
+                              },
+                            ),
                           );
                         },
                       ),
             ),
-            // Barra de navegação inferior
-            BottomNavigationBar(
-              backgroundColor: const Color.fromARGB(255, 6, 8, 10),
-              selectedItemColor: const Color.fromARGB(255, 221, 37, 37),
-              unselectedItemColor: const Color.fromARGB(153, 37, 179, 68),
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.check_circle),
-                  label: 'Acompanhar Pedido',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.favorite),
-                  label: 'Favoritos',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.shopping_cart),
-                  label: 'Carrinho',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.exit_to_app),
-                  label: 'Logout',
-                ),
-              ],
-              onTap: (index) {
-                switch (index) {
-                  case 0:
-                    // Voltar à tela inicial
-                    setState(() {
-                      _getBebidas();
-                    });
-                    break;
-                  case 1:
-                    // Ir para a tela de Acompanhar Pedido
-                    _mostrarAcompanharPedido();
-                    break;
-                  case 2:
-                    // Mostrar os favoritos
-                    _mostrarFavoritos();
-                    break;
-                  case 3:
-                    // Mostrar o carrinho
-                    _mostrarCarrinho();
-                    break;
-                  case 4:
-                    // Logout
-                    _logout();
-                    break;
-                }
-              },
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(color: Colors.black26, spreadRadius: 0, blurRadius: 8),
+          ],
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.deepPurple,
+          selectedItemColor: const Color.fromARGB(255, 5, 5, 5),
+          unselectedItemColor: const Color.fromARGB(
+            255,
+            2,
+            2,
+            2,
+          ).withOpacity(0.6),
+          showUnselectedLabels: false,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.check_circle),
+              label: 'Acompanhar Pedido',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.favorite),
+              label: 'Favoritos',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart),
+              label: 'Carrinho',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.exit_to_app),
+              label: 'Logout',
             ),
           ],
+          onTap: (index) {
+            switch (index) {
+              case 0:
+                setState(() {
+                  _getBebidas();
+                });
+                break;
+              case 1:
+                _mostrarAcompanharPedido();
+                break;
+              case 2:
+                _mostrarFavoritos();
+                break;
+              case 3:
+                _mostrarCarrinho();
+                break;
+              case 4:
+                _logout(); // Chama a função de logout
+                break;
+            }
+          },
         ),
       ),
     );
   }
 
-  // Função para exibir o status do pedido
   void _mostrarAcompanharPedido() {
     showDialog(
       context: context,
@@ -254,7 +296,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o status do pedido
+                Navigator.of(context).pop();
               },
               child: const Text("Fechar"),
             ),
@@ -264,30 +306,27 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para adicionar bebida ao carrinho
   void _adicionarAoCarrinho(Map bebida) {
     setState(() {
       carrinho.add(bebida);
     });
-    _mostrarMensagemDeAviso(bebida); // Mostrar o aviso
-    _salvarDados(); // Salva os dados
+    _mostrarMensagemDeAviso(bebida);
+    _salvarDados();
   }
 
-  // Função para adicionar/remover bebida dos favoritos
   void _adicionarRemoverFavoritos(Map bebida) {
     setState(() {
       if (favoritos.contains(bebida)) {
-        favoritos.remove(bebida); // Remove se já estiver nos favoritos
+        favoritos.remove(bebida);
         _mostrarMensagemDeAvisoFavorito(bebida, "removido");
       } else {
-        favoritos.add(bebida); // Adiciona aos favoritos
+        favoritos.add(bebida);
         _mostrarMensagemDeAvisoFavorito(bebida, "adicionado");
       }
     });
-    _salvarDados(); // Salva os dados
+    _salvarDados();
   }
 
-  // Função para mostrar um aviso após adicionar ou remover dos favoritos
   void _mostrarMensagemDeAvisoFavorito(Map bebida, String acao) {
     showDialog(
       context: context,
@@ -298,7 +337,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o aviso
+                Navigator.of(context).pop();
               },
               child: const Text("OK"),
             ),
@@ -308,7 +347,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para mostrar um aviso após adicionar a bebida ao carrinho
   void _mostrarMensagemDeAviso(Map bebida) {
     showDialog(
       context: context,
@@ -319,7 +357,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o aviso
+                Navigator.of(context).pop();
               },
               child: const Text("OK"),
             ),
@@ -329,7 +367,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para mostrar os favoritos na tela
   void _mostrarFavoritos() {
     showDialog(
       context: context,
@@ -359,7 +396,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha os favoritos
+                Navigator.of(context).pop();
               },
               child: const Text("Fechar"),
             ),
@@ -369,17 +406,15 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para mover favorito para o carrinho
   void _moverParaCarrinho(Map bebida) {
     setState(() {
       carrinho.add(bebida);
       favoritos.remove(bebida);
     });
     _mostrarMensagemDeMovimento(bebida, "adicionada ao carrinho");
-    _salvarDados(); // Salva os dados
+    _salvarDados();
   }
 
-  // Função para mostrar um aviso após mover a bebida para o carrinho
   void _mostrarMensagemDeMovimento(Map bebida, String acao) {
     showDialog(
       context: context,
@@ -390,7 +425,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o aviso
+                Navigator.of(context).pop();
               },
               child: const Text("OK"),
             ),
@@ -400,7 +435,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para mostrar o carrinho na tela
   void _mostrarCarrinho() {
     showDialog(
       context: context,
@@ -430,16 +464,14 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o carrinho
+                Navigator.of(context).pop();
               },
               child: const Text("Fechar"),
             ),
             TextButton(
               onPressed: () {
-                // Finalizar a compra
-                // Adicionar a lógica de pagamento ou finalização aqui
                 Navigator.of(context).pop(); // Fecha o carrinho
-                _finalizarCompra(); // Exibe a confirmação de compra
+                _finalizarCompra();
               },
               child: const Text("Finalizar Compra"),
             ),
@@ -449,24 +481,9 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para finalizar a compra
   void _finalizarCompra() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Compra Finalizada"),
-          content: const Text("Sua compra foi finalizada com sucesso!"),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Fecha a confirmação
-              },
-              child: const Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const PedidoScreen()));
   }
 }
