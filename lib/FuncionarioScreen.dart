@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:async'; // Para utilizar Timer
-import 'AdicionarBebidaScreen.dart'; // Importando a tela de adicionar bebida
+import 'dart:async';
+import 'AdicionarBebidaScreen.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -23,7 +23,6 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
   final String apiUrl =
       'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com/bebidas.json';
 
-  // Definir o Timer
   Timer? _timer;
 
   @override
@@ -59,14 +58,11 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
         if (data is Map) {
           // Verifica se os dados possuem entradas
           return data.entries.map((entry) {
-            // Cada 'entry.value' será um mapa com os dados da bebida
             final bebida = entry.value;
-
-            // Verifica se a bebida é um Map e se contém as chaves esperadas
             if (bebida is Map) {
               return Map<String, dynamic>.from(bebida)..['id'] = entry.key;
             } else {
-              return {}; // Caso não seja um Map, retorna um mapa vazio
+              return {};
             }
           }).toList();
         } else {
@@ -85,12 +81,9 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
     setState(() {
       bebidasFiltradas =
           bebidas.where((bebida) {
-            // Filtro pelo nome
             bool matchesNome = bebida['nome'].toLowerCase().contains(
               _searchQuery.toLowerCase(),
             );
-
-            // Filtro pela categoria
             bool matchesCategoria =
                 _selectedCategoria == 'Todas' ||
                 bebida['categoria'] == _selectedCategoria;
@@ -183,13 +176,13 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                   'volume': volumeController.text,
                 };
                 _editarBebidaFirebase(id, updatedBebida);
-                Navigator.of(context).pop(); // Fecha o diálogo
+                Navigator.of(context).pop();
               },
               child: const Text('Salvar'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo sem salvar
+                Navigator.of(context).pop();
               },
               child: const Text('Cancelar'),
             ),
@@ -212,16 +205,12 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Atualiza a bebida local na lista
         setState(() {
           // Encontra o índice da bebida editada
           int index = bebidas.indexWhere((item) => item['id'] == id);
           if (index != -1) {
             // Atualiza a bebida na lista
-            bebidas[index] = {
-              ...bebidas[index],
-              ...bebida,
-            }; // Mantém o id e atualiza os campos modificados
+            bebidas[index] = {...bebidas[index], ...bebida};
           }
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -240,10 +229,8 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
     var excel = Excel.createExcel();
     Sheet sheet = excel['Sheet1'];
 
-    // Adiciona cabeçalho
     sheet.appendRow(['Nome', 'Preço', 'Estoque', 'Volume']);
 
-    // Adiciona as bebidas ao relatório
     for (var bebida in bebidas) {
       sheet.appendRow([
         bebida['nome'] ?? '',
@@ -281,7 +268,6 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Barra de pesquisa por nome
             TextField(
               onChanged: (query) {
                 setState(() {

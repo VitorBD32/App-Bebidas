@@ -43,9 +43,7 @@ class TelaConfirmacaoCompra extends StatelessWidget {
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
-                // Aqui você pode implementar a finalização da compra
-                // Por exemplo, navegação para uma tela de pagamento ou sucesso.
-                Navigator.pop(context); // Fecha a tela de confirmação
+                Navigator.pop(context);
                 _mostrarCompraFinalizada(context);
               },
               child: const Text("Finalizar Compra"),
@@ -67,7 +65,7 @@ class TelaConfirmacaoCompra extends StatelessWidget {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Fecha a confirmação
+                Navigator.of(context).pop();
               },
               child: const Text("OK"),
             ),
