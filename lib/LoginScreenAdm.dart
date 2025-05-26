@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'FuncionarioScreen.dart';
-import 'LoginScreenAdm.dart';
+import 'AdmScreen.dart'; // Substitua pelo caminho correto
 
-class LoginScreenFuncionario extends StatefulWidget {
-  const LoginScreenFuncionario({Key? key}) : super(key: key);
+class LoginScreenAdm extends StatefulWidget {
+  const LoginScreenAdm({Key? key}) : super(key: key);
 
   @override
-  _LoginScreenFuncionarioState createState() => _LoginScreenFuncionarioState();
+  _LoginScreenAdmState createState() => _LoginScreenAdmState();
 }
 
-class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
+class _LoginScreenAdmState extends State<LoginScreenAdm> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   bool _isLoading = false;
@@ -20,8 +19,8 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
       return 'Por favor, insira um e-mail.';
     }
     final String trimmedEmail = email.trim();
-    if (!trimmedEmail.toLowerCase().endsWith('@funcionario.com')) {
-      return 'O e-mail deve ser de um funcionário.';
+    if (!trimmedEmail.toLowerCase().endsWith('@adm.com')) {
+      return 'O e-mail deve ser de um administrador.';
     }
     RegExp regex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$');
     if (!regex.hasMatch(trimmedEmail)) {
@@ -67,14 +66,14 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Funcionário logado: ${user.displayName ?? "Usuário"}',
+              'Administrador logado: ${user.displayName ?? "Usuário"}',
             ),
           ),
         );
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const FuncionarioScreen()),
+          MaterialPageRoute(builder: (context) => const AdmScreen()),
         );
       }
     } catch (e) {
@@ -94,8 +93,8 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login Funcionário'),
-        backgroundColor: Colors.green,
+        title: const Text('Login Administrador'),
+        backgroundColor: Colors.blue,
         elevation: 0,
       ),
       body: Center(
@@ -106,7 +105,11 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 40),
-                const Icon(Icons.work, size: 100, color: Colors.green),
+                const Icon(
+                  Icons.admin_panel_settings,
+                  size: 100,
+                  color: Colors.blue,
+                ),
                 const SizedBox(height: 40),
 
                 SizedBox(
@@ -121,7 +124,7 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
                       ),
                       filled: true,
                       fillColor: Colors.grey[100],
-                      prefixIcon: const Icon(Icons.email, color: Colors.green),
+                      prefixIcon: const Icon(Icons.email, color: Colors.blue),
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 14,
                         horizontal: 20,
@@ -144,7 +147,7 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
                       ),
                       filled: true,
                       fillColor: Colors.grey[100],
-                      prefixIcon: const Icon(Icons.lock, color: Colors.green),
+                      prefixIcon: const Icon(Icons.lock, color: Colors.blue),
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 14,
                         horizontal: 20,
@@ -159,7 +162,7 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
                     : ElevatedButton(
                       onPressed: _isLoading ? null : () => _login(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: Colors.blue,
                         padding: const EdgeInsets.symmetric(
                           vertical: 16,
                           horizontal: 32,
@@ -175,25 +178,6 @@ class _LoginScreenFuncionarioState extends State<LoginScreenFuncionario> {
                     ),
 
                 const SizedBox(height: 20),
-
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreenAdm(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Entrar como Administrador',
-                    style: TextStyle(
-                      color: Color.fromARGB(255, 38, 0, 255),
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

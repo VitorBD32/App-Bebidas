@@ -234,10 +234,19 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
             ),
             const SizedBox(height: 10),
             // Escolhedor de categoria
-            DropdownButton<String>(
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Filtrar por Categoria',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
               value: selectedCategory,
+              isExpanded: true,
               onChanged: (String? newValue) {
-                _filtrarPorCategoria(newValue!);
+                if (newValue != null) {
+                  _filtrarPorCategoria(newValue);
+                }
               },
               items:
                   categorias.map<DropdownMenuItem<String>>((String value) {
@@ -502,7 +511,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children:
                       pedidos.map((pedido) {
-                        String numero = pedido['numero'] ?? '—';
+                        String numero = pedido['idPedido'] ?? '—';
                         String nome = pedido['nome'] ?? 'Nome não disponível';
                         String data = pedido['data'] ?? 'Data não disponível';
                         String status =

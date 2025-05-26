@@ -216,9 +216,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
+
                         Align(
-                          // Posiciona o botão no canto superior direito
-                          alignment: Alignment.topRight,
+                          alignment: Alignment.topCenter,
                           child: ElevatedButton(
                             onPressed: () => _loginFuncionario(context),
                             style: ElevatedButton.styleFrom(

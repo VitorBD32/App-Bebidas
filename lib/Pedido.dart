@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PedidoScreen extends StatefulWidget {
   final List<Map> carrinho;
@@ -54,6 +55,7 @@ class _PedidoScreenState extends State<PedidoScreen> {
 
   // Função para adicionar pedido ao Firebase
   void _adicionarPedido() {
+    final String idPedido = 'pedido_${DateTime.now().millisecondsSinceEpoch}';
     final nome = _nomeController.text;
     final sobrenome = _sobrenomeController.text;
     final telefone = _telefoneController.text;
@@ -79,6 +81,7 @@ class _PedidoScreenState extends State<PedidoScreen> {
 
     // Preparando o pedido
     Map pedido = {
+      'idPedido': idPedido,
       'nome': nome,
       'sobrenome': sobrenome,
       'telefone': telefone,
@@ -243,17 +246,91 @@ class _PedidoScreenState extends State<PedidoScreen> {
             ),
             // Exibir os itens do carrinho
             Expanded(
-              child: ListView.builder(
-                itemCount: widget.carrinho.length,
-                itemBuilder: (context, index) {
-                  var item = widget.carrinho[index];
-                  return ListTile(
-                    title: Text(item['nome']),
-                    subtitle: Text(
-                      'Preço: R\$ ${item['preco']} x ${item['quantidade']} = R\$ ${double.tryParse(item['preco'].toString())! * (item['quantidade'] ?? 1)}',
+              child: SingleChildScrollView(
+                // Adicionado para rolagem vertical da tabela
+                child: DataTable(
+                  columnSpacing: 16.0,
+                  horizontalMargin: 12.0,
+                  headingRowHeight: 40.0,
+                  dataRowMinHeight: 48.0,
+                  dataRowMaxHeight: 56.0,
+                  headingTextStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  dividerThickness: 1,
+                  columns: const [
+                    DataColumn(label: Text('Produto')),
+                    DataColumn(label: Center(child: Text('Qtd'))),
+                    DataColumn(
+                      label: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text('Preço U.'),
+                      ),
                     ),
-                  );
-                },
+                    DataColumn(
+                      label: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text('Subtotal'),
+                      ),
+                    ),
+                  ],
+                  rows:
+                      widget.carrinho.map((item) {
+                        final String nome =
+                            item['nome']?.toString() ?? 'Produto Indisponível';
+                        final int quantidade =
+                            (item['quantidade'] is int)
+                                ? item['quantidade']
+                                : ((item['quantidade'] is String)
+                                    ? (int.tryParse(item['quantidade']) ?? 1)
+                                    : 1);
+
+                        final String precoString =
+                            item['preco']?.toString() ?? '0.0';
+                        final double precoUnitario =
+                            double.tryParse(precoString) ?? 0.0;
+                        final double subtotalItem = precoUnitario * quantidade;
+
+                        return DataRow(
+                          cells: [
+                            DataCell(
+                              Text(nome, style: TextStyle(fontSize: 14)),
+                            ),
+                            DataCell(
+                              Center(
+                                child: Text(
+                                  quantidade.toString(),
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  'R\$ ${precoUnitario.toStringAsFixed(2)}',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ),
+                            DataCell(
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  'R\$ ${subtotalItem.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                ),
               ),
             ),
             Text(

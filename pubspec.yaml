@@ -24,7 +24,9 @@ dependencies:
   excel: ^2.0.5
   path_provider: ^2.0.10
   json_annotation: ^4.5.0
-
+  desktop_window: ^0.4.0
+  image_picker: ^1.1.2 
+  firebase_storage: ^12.4.5
 
 dev_dependencies:
   flutter_test:
