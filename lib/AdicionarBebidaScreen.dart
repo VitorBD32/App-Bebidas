@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:image_picker/image_picker.dart'; // Importe image_picker
+import 'dart:io'; // Para File
+import 'dart:typed_data'; // Para Uint8List
 
 class AdicionarBebidaScreen extends StatefulWidget {
   const AdicionarBebidaScreen({Key? key}) : super(key: key);
@@ -18,6 +21,9 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
   final _volumeController = TextEditingController();
   String? _categoriaSelecionada;
 
+  File?
+  _selectedImage; // Variável para armazenar o arquivo da imagem selecionada
+
   final List<String> categorias = [
     'Cerveja',
     'Whisky',
@@ -27,7 +33,19 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
     'Itens Variados',
   ];
 
-  void _adicionarBebida() {
+  // Função para selecionar imagem da galeria
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  void _adicionarBebida() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -38,6 +56,23 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
     final estoque = _estoqueController.text;
     final volume = _volumeController.text;
 
+    String? imageDataToBase64;
+    if (_selectedImage != null) {
+      try {
+        Uint8List imageBytes = await _selectedImage!.readAsBytes();
+        // Converte os bytes da imagem para uma string Base64
+        imageDataToBase64 = base64Encode(imageBytes);
+      } catch (e) {
+        print("Erro ao converter imagem para Base64: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao processar imagem: $e')),
+          );
+        }
+        return; // Impede a adição da bebida se houver um erro na imagem
+      }
+    }
+
     Map<String, dynamic> bebida = {
       'nome': nome,
       'descricao': descricao,
@@ -45,6 +80,7 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
       'estoque': int.tryParse(estoque) ?? 0,
       'volume': volume.isEmpty ? null : volume,
       'categoria': _categoriaSelecionada,
+      'imagemBase64': imageDataToBase64, // Salva a string Base64 no Firebase
     };
 
     _adicionarBebidaFirebase(bebida)
@@ -67,7 +103,6 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
   }
 
   Future<void> _adicionarBebidaFirebase(Map<String, dynamic> bebida) async {
-    // Tipo explícito
     try {
       final response = await http.post(
         Uri.parse(
@@ -210,6 +245,30 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
                         prefixIcon: Icon(Icons.local_drink_outlined),
                       ),
                     ),
+                    const SizedBox(height: 20),
+                    // Botão para selecionar a imagem
+                    ElevatedButton.icon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.image),
+                      label: Text(
+                        _selectedImage == null
+                            ? 'Selecionar Imagem (Opcional)'
+                            : 'Imagem Selecionada: ${_selectedImage!.path.split('/').last}',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                    if (_selectedImage != null) // Mostra um preview da imagem
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Image.file(
+                          _selectedImage!,
+                          height: 150,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
                       value: _categoriaSelecionada,

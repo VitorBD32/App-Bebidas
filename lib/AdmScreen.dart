@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:typed_data'; // Import for Uint8List
 
 import 'AdicionarBebidaScreen.dart';
 import 'GerenciarFuncionariosScreen.dart'; // <-- nova tela
@@ -77,9 +78,11 @@ class _AdmScreenState extends State<AdmScreen> {
     setState(() {
       bebidasFiltradas =
           bebidas.where((bebida) {
-            bool matchesNome = bebida['nome'].toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            );
+            bool matchesNome =
+                bebida['nome']?.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ??
+                false;
             bool matchesCategoria =
                 _selectedCategoria == 'Todas' ||
                 bebida['categoria'] == _selectedCategoria;
@@ -121,37 +124,77 @@ class _AdmScreenState extends State<AdmScreen> {
       text: bebida['volume'] ?? '',
     );
 
+    // Get the current selected category or default to the first one if null
+    String? currentCategory = bebida['categoria'];
+    if (![
+      'Cerveja',
+      'Whisky',
+      'Vodka',
+      'Refrigerante',
+      'Energético',
+      'Itens Variados',
+    ].contains(currentCategory)) {
+      currentCategory =
+          null; // Set to null if it's not a valid category from your list
+    }
+
     showDialog(
       context: context,
       builder:
           (_) => AlertDialog(
             title: const Text('Editar Bebida'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nomeController,
-                  decoration: const InputDecoration(labelText: 'Nome'),
-                ),
-                TextField(
-                  controller: precoController,
-                  decoration: const InputDecoration(labelText: 'Preço'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: estoqueController,
-                  decoration: const InputDecoration(labelText: 'Estoque'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: descricaoController,
-                  decoration: const InputDecoration(labelText: 'Descrição'),
-                ),
-                TextField(
-                  controller: volumeController,
-                  decoration: const InputDecoration(labelText: 'Volume'),
-                ),
-              ],
+            content: SingleChildScrollView(
+              // Added SingleChildScrollView for scrollability
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nomeController,
+                    decoration: const InputDecoration(labelText: 'Nome'),
+                  ),
+                  TextField(
+                    controller: precoController,
+                    decoration: const InputDecoration(labelText: 'Preço'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  TextField(
+                    controller: estoqueController,
+                    decoration: const InputDecoration(labelText: 'Estoque'),
+                    keyboardType: TextInputType.number,
+                  ),
+                  TextField(
+                    controller: descricaoController,
+                    decoration: const InputDecoration(labelText: 'Descrição'),
+                  ),
+                  TextField(
+                    controller: volumeController,
+                    decoration: const InputDecoration(labelText: 'Volume'),
+                  ),
+                  DropdownButtonFormField<String>(
+                    value: currentCategory,
+                    decoration: const InputDecoration(labelText: 'Categoria'),
+                    items:
+                        <String>[
+                          'Cerveja',
+                          'Whisky',
+                          'Vodka',
+                          'Refrigerante',
+                          'Energético',
+                          'Itens Variados',
+                        ].map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        currentCategory = newValue;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -162,6 +205,7 @@ class _AdmScreenState extends State<AdmScreen> {
                     'estoque': int.tryParse(estoqueController.text) ?? 0,
                     'descricao': descricaoController.text,
                     'volume': volumeController.text,
+                    'categoria': currentCategory, // Update the category
                   };
                   _editarBebidaFirebase(id, bebidaAtualizada);
                   Navigator.pop(context);
@@ -202,13 +246,20 @@ class _AdmScreenState extends State<AdmScreen> {
   Future<void> _gerarRelatorioExcel() async {
     var excel = Excel.createExcel();
     Sheet sheet = excel['Sheet1'];
-    sheet.appendRow(['Nome', 'Preço', 'Estoque', 'Volume']);
+    sheet.appendRow([
+      'Nome',
+      'Preço',
+      'Estoque',
+      'Volume',
+      'Categoria',
+    ]); // Added Category
     for (var bebida in bebidas) {
       sheet.appendRow([
         bebida['nome'] ?? '',
         bebida['preco'] ?? '0.00',
         bebida['estoque']?.toString() ?? '0',
         bebida['volume'] ?? '',
+        bebida['categoria'] ?? '', // Added Category
       ]);
     }
 
@@ -232,7 +283,10 @@ class _AdmScreenState extends State<AdmScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Administrador - Bebidas'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor:
+            Theme.of(context).colorScheme.primary, // Using theme color
+        foregroundColor:
+            Theme.of(context).colorScheme.onPrimary, // Using theme color
         centerTitle: true,
       ),
       body: Padding(
@@ -254,10 +308,10 @@ class _AdmScreenState extends State<AdmScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Filtrar por Categoria',
                 border: OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.filter_list),
+                prefixIcon: Icon(Icons.filter_list),
               ),
               value: _selectedCategoria,
               isExpanded: true,
@@ -292,6 +346,18 @@ class _AdmScreenState extends State<AdmScreen> {
                         itemCount: bebidasFiltradas.length,
                         itemBuilder: (context, index) {
                           final bebida = bebidasFiltradas[index];
+                          Uint8List? imageBytes;
+                          if (bebida['imagemBase64'] != null) {
+                            try {
+                              imageBytes = base64Decode(bebida['imagemBase64']);
+                            } catch (e) {
+                              print(
+                                'Error decoding image for ${bebida['nome']}: $e',
+                              );
+                              imageBytes = null;
+                            }
+                          }
+
                           return Card(
                             elevation: 4,
                             margin: const EdgeInsets.symmetric(vertical: 8),
@@ -299,21 +365,46 @@ class _AdmScreenState extends State<AdmScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ListTile(
-                              title: Text(bebida['nome']),
+                              leading:
+                                  imageBytes != null
+                                      ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                          8.0,
+                                        ),
+                                        child: Image.memory(
+                                          imageBytes,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                      : const Icon(
+                                        Icons.image_not_supported,
+                                        size: 50,
+                                      ),
+                              title: Text(
+                                bebida['nome'] ?? 'Nome Indisponível',
+                              ),
                               subtitle: Text(
-                                'Preço: R\$ ${bebida['preco']} - Estoque: ${bebida['estoque']}',
+                                'Preço: R\$ ${bebida['preco'] ?? '0.00'} - Estoque: ${bebida['estoque']?.toString() ?? '0'} - Cat.: ${bebida['categoria'] ?? 'N/A'}',
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.edit),
+                                    icon: const Icon(
+                                      Icons.edit,
+                                      color: Colors.blue,
+                                    ),
                                     onPressed:
                                         () =>
                                             _editarBebida(bebida, bebida['id']),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete),
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    ),
                                     onPressed:
                                         () => _excluirBebida(bebida['id']),
                                   ),
@@ -325,44 +416,80 @@ class _AdmScreenState extends State<AdmScreen> {
                       ),
             ),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AdicionarBebidaScreen(),
+            // Centralize the Wrap widget
+            Center(
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center, // Added this line
+                children: [
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text('Adicionar Bebida'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AdicionarBebidaScreen(),
+                        ),
+                      ).then((_) => _carregarBebidas());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                    ).then((_) => _carregarBebidas());
-                  },
-                  child: const Text(' + Adicionar Bebida'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: _gerarRelatorioExcel,
-                  child: const Text(' Gerar Excel'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const GerenciarFuncionariosScreen(),
+                      textStyle: const TextStyle(fontSize: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    );
-                  },
-                  child: const Text('Gerenciar Funcionários'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepOrange,
+                    ),
                   ),
-                ),
-              ],
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.file_download),
+                    label: const Text('Gerar Excel'),
+                    onPressed: _gerarRelatorioExcel,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      textStyle: const TextStyle(fontSize: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.people),
+                    label: const Text('Gerenciar Funcionários'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const GerenciarFuncionariosScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      textStyle: const TextStyle(fontSize: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

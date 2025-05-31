@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // Para converter a resposta da API em JSON
+import 'dart:convert'; // Necessário para base64Decode
 import 'package:app_de_bebidas/Pedido.dart';
-import 'package:app_de_bebidas/LoginScreen.dart'; // Importa a tela de login
+import 'package:app_de_bebidas/LoginScreen.dart';
 
 class PrincipalClienteScreen extends StatefulWidget {
   const PrincipalClienteScreen({Key? key}) : super(key: key);
@@ -28,7 +28,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     'Refrigerante',
     'Energético',
     'Itens Variados',
-  ]; // Categorias disponíveis
+  ];
 
   final String apiUrl =
       'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com/bebidas.json';
@@ -270,7 +270,8 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                           var bebida = bebidasFiltradas[index];
                           String nome = bebida['nome'] ?? 'Nome não disponível';
                           String preco = bebida['preco'] ?? '0.00';
-                          String imagem = bebida['imagem'] ?? '';
+                          // Pega a string Base64 da bebida
+                          String? imagemBase64 = bebida['imagemBase64'];
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 8),
@@ -282,17 +283,33 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                               title: Text(nome),
                               subtitle: Text('Preço: R\$ $preco'),
                               leading:
-                                  imagem.isNotEmpty
+                                  // Verifica se há uma string Base64 e se ela não está vazia
+                                  imagemBase64 != null &&
+                                          imagemBase64.isNotEmpty
                                       ? ClipRRect(
                                         borderRadius: BorderRadius.circular(12),
-                                        child: Image.network(
-                                          imagem,
+                                        child: Image.memory(
+                                          // Decodifica a string Base64 para bytes
+                                          base64Decode(imagemBase64),
                                           width: 50,
                                           height: 50,
                                           fit: BoxFit.cover,
+                                          // Adiciona um errorBuilder para lidar com imagens corrompidas
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return const Icon(
+                                              Icons.error_outline,
+                                              size: 50,
+                                            );
+                                          },
                                         ),
                                       )
-                                      : const Icon(Icons.image_not_supported),
+                                      : const Icon(
+                                        Icons.image_not_supported,
+                                      ), // Ícone padrão se não houver imagem
                               trailing: IconButton(
                                 icon: const Icon(Icons.add_shopping_cart),
                                 onPressed: () {
@@ -513,7 +530,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                       pedidos.map((pedido) {
                         String numero = pedido['idPedido'] ?? '—';
                         String nome = pedido['nome'] ?? 'Nome não disponível';
-                        String data = pedido['data'] ?? 'Data não disponível';
+
                         String status =
                             pedido['status'] ?? 'Status não disponível';
                         double valor = pedido['valor'] ?? 0.0;
@@ -534,7 +551,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                           children: [
                             Text('Pedido #$numero'),
                             Text('Nome: $nome'),
-                            Text('Data: $data'),
+
                             Column(children: itensWidgets),
                             Text(
                               'Valor Total: R\$ ${valor.toStringAsFixed(2)}',
@@ -581,11 +598,10 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     List<Map<String, dynamic>> lista = [];
     data.forEach((chave, valor) {
       lista.add({
-        'numero': chave,
+        'idPedido': valor['idPedido'] ?? chave,
         'nome': valor['nome'] ?? 'Nome não disponível',
-        'data': valor['data'] ?? 'Data não disponível',
         'itens': valor['itens'] ?? [],
-        'valor': valor['valor'] ?? 0.0,
+        'valor': valor['precoTotal'] ?? 0.0,
         'status': valor['status'] ?? 'Status não disponível',
       });
     });

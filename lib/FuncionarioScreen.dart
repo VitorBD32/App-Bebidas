@@ -268,6 +268,7 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             TextField(
               onChanged: (query) {
@@ -283,7 +284,6 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
             DropdownButtonFormField<String>(
               decoration: InputDecoration(
                 labelText: 'Filtrar por Categoria',
@@ -318,9 +318,7 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                     );
                   }).toList(),
             ),
-
             const SizedBox(height: 16),
-
             Expanded(
               child:
                   _isLoading
@@ -333,6 +331,7 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                           String preco = bebida['preco'] ?? '0.00';
                           String estoque = bebida['estoque']?.toString() ?? '0';
                           String id = bebida['id'] ?? '';
+                          String? imagemBase64 = bebida['imagemBase64'];
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 8),
@@ -345,6 +344,32 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                               subtitle: Text(
                                 'Preço: R\$ $preco\nEstoque: $estoque',
                               ),
+                              leading:
+                                  imagemBase64 != null &&
+                                          imagemBase64.isNotEmpty
+                                      ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.memory(
+                                          base64Decode(imagemBase64),
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return const Icon(
+                                              Icons.error_outline,
+                                              size: 50,
+                                            );
+                                          },
+                                        ),
+                                      )
+                                      : const Icon(
+                                        Icons.image_not_supported,
+                                        size: 50,
+                                      ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -368,60 +393,93 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                       ),
             ),
             const SizedBox(height: 16),
-
-            // Botões de funcionalidades do funcionário
-            Wrap(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Navegar para a tela de adicionar bebida
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AdicionarBebidaScreen(),
+            Center(
+              child: Wrap(
+                spacing: 20, // Horizontal space between buttons
+                runSpacing: 10, // Vertical space between lines of buttons
+                alignment: WrapAlignment.center, // Align items in the center
+                children: [
+                  ElevatedButton.icon(
+                    // Changed to ElevatedButton.icon
+                    icon: const Icon(Icons.add_circle_outline), // Added icon
+                    label: const Text('Adicionar Bebida'), // Added label
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AdicionarBebidaScreen(),
+                        ),
+                      ).then((_) => _carregarBebidas());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white, // Added foreground color
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16, // Adjusted padding for icon buttons
+                        vertical: 12, // Adjusted padding for icon buttons
                       ),
-                    ).then((_) => _carregarBebidas());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 30,
-                      horizontal: 15,
-                    ),
-                  ),
-                  child: const Text('Adicionar Bebida'),
-                ),
-                const SizedBox(width: 20),
-                ElevatedButton(
-                  onPressed: _gerarRelatorioExcel,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 30,
-                      horizontal: 15,
-                    ),
-                  ),
-                  child: const Text('Gerar Relatório Excel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const GerenciarPedidosScreen(),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                      ), // Added text style
+                      shape: RoundedRectangleBorder(
+                        // Added shape
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 30,
-                      horizontal: 15,
                     ),
                   ),
-                  child: const Text('Gerenciar Pedidos'),
-                ),
-              ],
+                  ElevatedButton.icon(
+                    // Changed to ElevatedButton.icon
+                    icon: const Icon(Icons.file_download), // Added icon
+                    label: const Text('Gerar Relatório Excel'), // Added label
+                    onPressed: _gerarRelatorioExcel,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white, // Added foreground color
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16, // Adjusted padding for icon buttons
+                        vertical: 12, // Adjusted padding for icon buttons
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                      ), // Added text style
+                      shape: RoundedRectangleBorder(
+                        // Added shape
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    // Changed to ElevatedButton.icon
+                    icon: const Icon(
+                      Icons.shopping_cart,
+                    ), // Changed icon to a cart for orders
+                    label: const Text('Gerenciar Pedidos'), // Added label
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const GerenciarPedidosScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white, // Added foreground color
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16, // Adjusted padding for icon buttons
+                        vertical: 12, // Adjusted padding for icon buttons
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                      ), // Added text style
+                      shape: RoundedRectangleBorder(
+                        // Added shape
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

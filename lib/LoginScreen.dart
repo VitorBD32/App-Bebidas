@@ -139,12 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 40),
-                // Logo ou imagem, se desejado
-                Icon(
-                  Icons.person,
-                  size: 100,
-                  color: Colors.deepPurple,
-                ), // Exemplo de ícone de logo
+                Icon(Icons.person, size: 100, color: Colors.deepPurple),
 
                 const SizedBox(height: 40),
                 // Campo de e-mail
