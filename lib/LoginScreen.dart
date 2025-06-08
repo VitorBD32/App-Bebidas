@@ -1,10 +1,10 @@
 import 'package:app_de_bebidas/FuncionarioScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'CriarContaScreen.dart'; // Tela de criação de conta
-import 'principalCliente.dart'; // Tela principal para o cliente
-import 'LoginScreenFuncionario.dart'; // Nova tela de login para funcionário
-import 'EsqueciSenhaScreen.dart'; // Tela de "Esqueci a Senha"
+import 'CriarContaScreen.dart';
+import 'principalCliente.dart';
+import 'LoginScreenFuncionario.dart';
+import 'EsqueciSenhaScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -49,8 +49,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final emailError = _validarEmail(email);
     final senhaError = _validarSenha(senha);
-
-    // Verifica se há erro nos campos
     if (emailError != null || senhaError != null) {
       ScaffoldMessenger.of(
         context,
@@ -59,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() {
-      _isLoading = true; // Inicia o carregamento
+      _isLoading = true;
     });
 
     try {
@@ -98,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ).showSnackBar(SnackBar(content: Text('Erro ao fazer login: $e')));
     } finally {
       setState(() {
-        _isLoading = false; // Finaliza o carregamento após o login
+        _isLoading = false;
       });
     }
   }
@@ -130,7 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
       ),
       body: Center(
-        // Centraliza o conteúdo na tela
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: SingleChildScrollView(
@@ -142,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Icon(Icons.person, size: 100, color: Colors.deepPurple),
 
                 const SizedBox(height: 40),
-                // Campo de e-mail
+
                 Container(
                   width: MediaQuery.of(context).size.width * 0.8,
                   child: TextField(
@@ -164,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Campo de senha
+
                 Container(
                   width: MediaQuery.of(context).size.width * 0.8,
                   child: TextField(
@@ -187,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Botões de Login
+
                 _isLoading
                     ? const CircularProgressIndicator()
                     : Column(

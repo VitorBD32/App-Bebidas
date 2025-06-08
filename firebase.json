@@ -1,1 +1,41 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"app-de-bebidas-826aa","appId":"1:469393720381:android:76999e0cd2e04f1ed0d654","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"app-de-bebidas-826aa","configurations":{"android":"1:469393720381:android:76999e0cd2e04f1ed0d654","ios":"1:469393720381:ios:3e786954cd7c3fffd0d654","macos":"1:469393720381:ios:3e786954cd7c3fffd0d654","web":"1:469393720381:web:91f25ac5f3027635d0d654","windows":"1:469393720381:web:ced5ceb58a3a6a13d0d654"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "app-de-bebidas-826aa",
+          "appId": "1:469393720381:android:76999e0cd2e04f1ed0d654",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "app-de-bebidas-826aa",
+          "configurations": {
+            "android": "1:469393720381:android:76999e0cd2e04f1ed0d654",
+            "ios": "1:469393720381:ios:3e786954cd7c3fffd0d654",
+            "macos": "1:469393720381:ios:3e786954cd7c3fffd0d654",
+            "web": "1:469393720381:web:91f25ac5f3027635d0d654",
+            "windows": "1:469393720381:web:ced5ceb58a3a6a13d0d654"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
+}

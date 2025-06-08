@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // Necessário para base64Decode
+import 'dart:convert';
 import 'package:app_de_bebidas/Pedido.dart';
 import 'package:app_de_bebidas/LoginScreen.dart';
 
@@ -13,6 +13,10 @@ class PrincipalClienteScreen extends StatefulWidget {
 }
 
 class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
+  // A instância do plugin de notificações locais foi removida.
+  // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  //     FlutterLocalNotificationsPlugin();
+
   List<Map> bebidas = [];
   List<Map> bebidasFiltradas = [];
   List<Map> carrinho = [];
@@ -43,9 +47,11 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar bebidas: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao carregar bebidas: $e')));
+      }
     }
   }
 
@@ -55,17 +61,11 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // Verifique se a resposta tem um formato Map
         if (data is Map) {
           return data.entries.map((entry) {
-            final bebida = entry.value;
-
-            // Certifique-se de que o tipo é um Map e contenha os dados esperados
-            if (bebida is Map) {
-              return Map<String, dynamic>.from(bebida)..['id'] = entry.key;
-            } else {
-              return {};
-            }
+            final bebida = Map<String, dynamic>.from(entry.value);
+            bebida['id'] = entry.key; // Adiciona o ID do Firebase à bebida
+            return bebida;
           }).toList();
         } else {
           throw Exception('Formato de dados inesperado');
@@ -81,18 +81,13 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
   // Função para salvar os dados no SharedPreferences
   void _salvarDados() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Salvar carrinho como uma lista de strings
     List<String> carrinhoStr = carrinho.map((e) => json.encode(e)).toList();
     prefs.setStringList('carrinho', carrinhoStr);
-
     prefs.setString('pedidoStatus', pedidoStatus);
   }
 
   void _carregarDados() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Carregar carrinho e decodificar JSON para Map
     List<String>? carrinhoStr = prefs.getStringList('carrinho');
     if (carrinhoStr != null) {
       setState(() {
@@ -102,8 +97,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                 .toList();
       });
     }
-
-    // Carregar status do pedido
     String? status = prefs.getString('pedidoStatus');
     if (status != null) {
       setState(() {
@@ -114,23 +107,18 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
 
   void _logout() async {
     _salvarDados();
-
     final prefs = await SharedPreferences.getInstance();
-    prefs.clear(); // Limpa todos os dados armazenados no SharedPreferences
-
+    prefs.clear();
     setState(() {
-      carrinho = []; // Limpa o carrinho
-      pedidoStatus = 'Aguardando'; // Reseta o status do pedido
+      carrinho = [];
+      pedidoStatus = 'Aguardando';
     });
-
-    // Redireciona para a tela de login
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   }
 
-  // Função para adicionar uma bebida ao carrinho
   void _adicionarAoCarrinho(Map bebida) {
     setState(() {
       carrinho.add(bebida);
@@ -138,7 +126,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     _salvarDados();
   }
 
-  // Função para remover uma bebida do carrinho
   void _removerDoCarrinho(Map bebida) {
     setState(() {
       carrinho.remove(bebida);
@@ -147,7 +134,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     _mostrarMensagemDeRemocao(bebida);
   }
 
-  // Função para mostrar um aviso após remover a bebida do carrinho
   void _mostrarMensagemDeRemocao(Map bebida) {
     showDialog(
       context: context,
@@ -168,7 +154,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para filtrar as bebidas pelo nome
   void _filtrarBebidas(String query) {
     setState(() {
       searchQuery = query;
@@ -179,7 +164,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     });
   }
 
-  // Função para filtrar bebidas por categoria
   void _filtrarPorCategoria(String categoria) {
     setState(() {
       selectedCategory = categoria;
@@ -197,13 +181,12 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
   @override
   void initState() {
     super.initState();
-    _carregarDados(); // Carrega os dados quando a tela for iniciada
+    _carregarDados();
     _carregarBebidas();
   }
 
   @override
   void dispose() {
-    // Salva os dados ao fechar o app
     _salvarDados();
     super.dispose();
   }
@@ -270,7 +253,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                           var bebida = bebidasFiltradas[index];
                           String nome = bebida['nome'] ?? 'Nome não disponível';
                           String preco = bebida['preco'] ?? '0.00';
-                          // Pega a string Base64 da bebida
                           String? imagemBase64 = bebida['imagemBase64'];
 
                           return Card(
@@ -283,18 +265,15 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                               title: Text(nome),
                               subtitle: Text('Preço: R\$ $preco'),
                               leading:
-                                  // Verifica se há uma string Base64 e se ela não está vazia
                                   imagemBase64 != null &&
                                           imagemBase64.isNotEmpty
                                       ? ClipRRect(
                                         borderRadius: BorderRadius.circular(12),
                                         child: Image.memory(
-                                          // Decodifica a string Base64 para bytes
                                           base64Decode(imagemBase64),
                                           width: 50,
                                           height: 50,
                                           fit: BoxFit.cover,
-                                          // Adiciona um errorBuilder para lidar com imagens corrompidas
                                           errorBuilder: (
                                             context,
                                             error,
@@ -307,9 +286,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                                           },
                                         ),
                                       )
-                                      : const Icon(
-                                        Icons.image_not_supported,
-                                      ), // Ícone padrão se não houver imagem
+                                      : const Icon(Icons.image_not_supported),
                               trailing: IconButton(
                                 icon: const Icon(Icons.add_shopping_cart),
                                 onPressed: () {
@@ -326,7 +303,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.only(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
           ),
@@ -382,7 +359,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para mostrar o carrinho
   void _mostrarCarrinho() {
     showDialog(
       context: context,
@@ -395,7 +371,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
               carrinho.isEmpty
                   ? const Text("O carrinho está vazio.")
                   : StatefulBuilder(
-                    // Usando StatefulBuilder para garantir a atualização da UI
                     builder: (context, setState) {
                       total = 0.0;
                       carrinho.forEach((bebida) {
@@ -408,19 +383,14 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Exibindo os itens do carrinho
                           ...List.generate(carrinho.length, (index) {
                             var bebida = carrinho[index];
                             String nome =
                                 bebida['nome'] ?? 'Nome não disponível';
                             String preco = bebida['preco'] ?? '0.00';
-                            int quantidade =
-                                bebida['quantidade'] ?? 1; // Quantidade do item
+                            int quantidade = bebida['quantidade'] ?? 1;
                             double precoUnitario =
                                 double.tryParse(preco) ?? 0.0;
-                            double precoTotalItem =
-                                precoUnitario *
-                                quantidade; // Preço total do item
 
                             return ListTile(
                               title: Text(
@@ -455,9 +425,7 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                                 icon: const Icon(Icons.remove_shopping_cart),
                                 onPressed: () {
                                   _removerDoCarrinho(bebida);
-                                  setState(
-                                    () {},
-                                  ); // Atualiza o carrinho imediatamente após a remoção
+                                  setState(() {});
                                 },
                               ),
                             );
@@ -494,7 +462,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     );
   }
 
-  // Função para atualizar a quantidade de um item no carrinho
   void _atualizarQuantidade(Map bebida, int novaQuantidade, Function setState) {
     if (novaQuantidade > 0) {
       setState(() {
@@ -504,7 +471,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     }
   }
 
-  // Função para finalizar a compra
   void _finalizarCompra() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => PedidoScreen(carrinho: carrinho)),
@@ -535,7 +501,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                             pedido['status'] ?? 'Status não disponível';
                         double valor = pedido['valor'] ?? 0.0;
 
-                        // Exibe os itens do pedido
                         List<Widget> itensWidgets = [];
                         List<dynamic> itens = pedido['itens'] ?? [];
                         for (var item in itens) {
@@ -551,13 +516,12 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
                           children: [
                             Text('Pedido #$numero'),
                             Text('Nome: $nome'),
-
                             Column(children: itensWidgets),
                             Text(
                               'Valor Total: R\$ ${valor.toStringAsFixed(2)}',
                             ),
                             Text('Status: $status'),
-                            Divider(),
+                            const Divider(),
                           ],
                         );
                       }).toList(),
@@ -574,13 +538,14 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar pedidos: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro ao carregar pedidos: $e')));
+      }
     }
   }
 
-  // Função para buscar todos os pedidos no Firebase Realtime Database
   Future<List<Map<String, dynamic>>> _carregarPedidos() async {
     final url =
         'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com/pedidos.json';
@@ -608,7 +573,6 @@ class _PrincipalClienteScreenState extends State<PrincipalClienteScreen> {
     return lista;
   }
 
-  // Função para mostrar uma mensagem quando não houver pedidos
   void _mostrarMensagem(String mensagem) {
     showDialog(
       context: context,

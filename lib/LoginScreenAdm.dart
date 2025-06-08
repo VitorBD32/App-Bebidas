@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'AdmScreen.dart'; // Substitua pelo caminho correto
+import 'AdmScreen.dart';
 
 class LoginScreenAdm extends StatefulWidget {
   const LoginScreenAdm({Key? key}) : super(key: key);

@@ -1,32 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'firebase_options.dart';
 import 'LoginScreen.dart';
-
-// Importações para controle da janela em desktop
-import 'dart:io' show Platform;
+import 'dart:io' show Platform; //detectar qual plataforma ta rodando
 import 'package:desktop_window/desktop_window.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Certifique-se de inicializar o Firebase no background handler também
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  if (message.notification != null) {
+    // Adicionado uma verificação de plataforma para notificação em background
+    if (Platform.isAndroid || Platform.isIOS) {
+      flutterLocalNotificationsPlugin.show(
+        message.hashCode,
+        message.notification!.title,
+        message.notification!.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'pedido_status_channel',
+            'Atualizações do Pedido',
+            channelDescription: 'Notificações sobre o status dos seus pedidos.',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+        payload: message.data['screen'] ?? 'no_payload',
+      );
+    }
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    const double phoneFrameWidth = 400.0;
-    const double phoneFrameHeight = 866.0;
-    const double windowPaddingHorizontal = 400.0;
-    const double windowPaddingVertical = 320.0;
-
-    const double desiredWindowWidth = phoneFrameWidth + windowPaddingHorizontal;
-    const double desiredWindowHeight = phoneFrameHeight + windowPaddingVertical;
-
+    const double initialDesktopWidth = 500.0;
+    const double initialDesktopHeight = 900.0;
     await DesktopWindow.setWindowSize(
-      const Size(desiredWindowWidth, desiredWindowHeight),
+      const Size(initialDesktopWidth, initialDesktopHeight),
     );
+    await DesktopWindow.setMinWindowSize(const Size(900.0, 500.0));
   }
 
-  // Inicializa o Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // Executa o aplicativo
+  // **** INÍCIO DA MUDANÇA PARA REMOVER NOTIFICAÇÕES DO WINDOWS ****
+
+  // Condicionando a inicialização do plugin de notificações locais
+  // para que só ocorra em Android e iOS
+  if (Platform.isAndroid || Platform.isIOS) {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings();
+
+    final InitializationSettings
+    initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
+      // 'windows' não será mais incluído aqui, pois a inicialização será condicional
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        print('Notificação clicada com payload: ${response.payload}');
+        if (response.payload == 'acompanhar_pedido' ||
+            response.payload?.startsWith('status_update_') == true) {
+          print('Tentando navegar para a tela de acompanhamento de pedido.');
+        } else if (response.payload == 'compra_finalizada') {
+          print('Notificação de compra finalizada clicada.');
+        } else if (response.payload?.startsWith('admin_action_confirmed') ==
+            true) {
+          print('Notificação de ação admin confirmada clicada.');
+        }
+      },
+    );
+  }
+  // **** FIM DA MUDANÇA ****
+
   runApp(const MyApp());
 }
 
@@ -39,47 +100,6 @@ class MyApp extends StatelessWidget {
       title: 'App Bebidas',
       debugShowCheckedModeBanner: false,
       theme: _buildAppTheme(),
-      builder: (context, child) {
-        if (child == null) {
-          return const SizedBox.shrink();
-        }
-
-        const double phoneFrameWidth = 400.0;
-        const double phoneFrameHeight = 866.0;
-        const double bezelThickness = 16.0;
-        const double frameCornerRadius = 40.0;
-        const double screenCornerRadius = 24.0;
-
-        return Scaffold(
-          // Cor de fundo para a área "fora" do telemóvel simulado na janela do desktop
-          backgroundColor: Colors.grey[300],
-          body: Center(
-            child: Container(
-              width: phoneFrameWidth,
-              height: phoneFrameHeight,
-              padding: const EdgeInsets.all(bezelThickness),
-              decoration: BoxDecoration(
-                color: Colors.grey[850],
-                borderRadius: BorderRadius.circular(frameCornerRadius),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 10.0,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                // Garante que o conteúdo da tela respeite os cantos arredondados
-                borderRadius: BorderRadius.circular(screenCornerRadius),
-                // 'child' aqui é o widget Navigator que gerencia suas telas (SplashScreen, LoginScreen, etc.)
-                // As telas serão renderizadas dentro desta área.
-                child: child,
-              ),
-            ),
-          ),
-        );
-      },
       home: const SplashScreen(),
     );
   }
@@ -110,7 +130,7 @@ class MyApp extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: Colors.deepPurple,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),

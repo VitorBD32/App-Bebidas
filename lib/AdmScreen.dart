@@ -5,10 +5,9 @@ import 'dart:async';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'dart:typed_data'; // Import for Uint8List
-
+import 'dart:typed_data';
 import 'AdicionarBebidaScreen.dart';
-import 'GerenciarFuncionariosScreen.dart'; // <-- nova tela
+import 'GerenciarFuncionariosScreen.dart';
 
 class AdmScreen extends StatefulWidget {
   const AdmScreen({Key? key}) : super(key: key);
@@ -17,6 +16,7 @@ class AdmScreen extends StatefulWidget {
   _AdmScreenState createState() => _AdmScreenState();
 }
 
+//dados e variaveis que a pagina vai usar
 class _AdmScreenState extends State<AdmScreen> {
   List<Map> bebidas = [];
   List<Map> bebidasFiltradas = [];
@@ -30,6 +30,7 @@ class _AdmScreenState extends State<AdmScreen> {
 
   @override
   void initState() {
+    //Inicia quando a tela abre
     super.initState();
     _carregarBebidas();
   }
@@ -124,7 +125,6 @@ class _AdmScreenState extends State<AdmScreen> {
       text: bebida['volume'] ?? '',
     );
 
-    // Get the current selected category or default to the first one if null
     String? currentCategory = bebida['categoria'];
     if (![
       'Cerveja',
@@ -134,8 +134,7 @@ class _AdmScreenState extends State<AdmScreen> {
       'Energético',
       'Itens Variados',
     ].contains(currentCategory)) {
-      currentCategory =
-          null; // Set to null if it's not a valid category from your list
+      currentCategory = null;
     }
 
     showDialog(
@@ -144,7 +143,6 @@ class _AdmScreenState extends State<AdmScreen> {
           (_) => AlertDialog(
             title: const Text('Editar Bebida'),
             content: SingleChildScrollView(
-              // Added SingleChildScrollView for scrollability
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -246,20 +244,14 @@ class _AdmScreenState extends State<AdmScreen> {
   Future<void> _gerarRelatorioExcel() async {
     var excel = Excel.createExcel();
     Sheet sheet = excel['Sheet1'];
-    sheet.appendRow([
-      'Nome',
-      'Preço',
-      'Estoque',
-      'Volume',
-      'Categoria',
-    ]); // Added Category
+    sheet.appendRow(['Nome', 'Preço', 'Estoque', 'Volume', 'Categoria']);
     for (var bebida in bebidas) {
       sheet.appendRow([
         bebida['nome'] ?? '',
         bebida['preco'] ?? '0.00',
         bebida['estoque']?.toString() ?? '0',
         bebida['volume'] ?? '',
-        bebida['categoria'] ?? '', // Added Category
+        bebida['categoria'] ?? '',
       ]);
     }
 
@@ -278,15 +270,72 @@ class _AdmScreenState extends State<AdmScreen> {
     super.dispose();
   }
 
+  Future<void> _gerarRelatorioClientes() async {
+    final url = Uri.parse(
+      'https://app-de-bebidas-826aa-default-rtdb.firebaseio.com/clientes.json',
+    );
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final Map<String, dynamic>? dados = json.decode(response.body);
+        if (dados == null || dados.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Nenhum cliente encontrado.')),
+          );
+          return;
+        }
+
+        var excel = Excel.createExcel();
+        Sheet sheet = excel['Sheet1'];
+
+        // Cabeçalhos
+        sheet.appendRow([
+          'Nome',
+          'Email',
+          'CPF',
+          'Data de Nascimento',
+          'Criado em',
+          'UID',
+        ]);
+
+        // Linhas de dados
+        dados.forEach((id, cliente) {
+          sheet.appendRow([
+            cliente['nome'] ?? '',
+            cliente['email'] ?? '',
+            cliente['cpf'] ?? '',
+            cliente['dataNascimento'] ?? '',
+            cliente['criadoEm'] ?? '',
+            cliente['uid'] ?? '',
+          ]);
+        });
+
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/relatorio_clientes.xlsx');
+        await file.writeAsBytes(await excel.encode() ?? []);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Relatório de clientes gerado.')),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro: ${response.statusCode}')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao gerar relatório: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Administrador - Bebidas'),
-        backgroundColor:
-            Theme.of(context).colorScheme.primary, // Using theme color
-        foregroundColor:
-            Theme.of(context).colorScheme.onPrimary, // Using theme color
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         centerTitle: true,
       ),
       body: Padding(
@@ -416,12 +465,11 @@ class _AdmScreenState extends State<AdmScreen> {
                       ),
             ),
             const SizedBox(height: 16),
-            // Centralize the Wrap widget
             Center(
               child: Wrap(
                 spacing: 10,
                 runSpacing: 10,
-                alignment: WrapAlignment.center, // Added this line
+                alignment: WrapAlignment.center,
                 children: [
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add_circle_outline),
@@ -477,6 +525,23 @@ class _AdmScreenState extends State<AdmScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      textStyle: const TextStyle(fontSize: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.description),
+                    label: const Text('Relatório de Clientes'),
+                    onPressed: _gerarRelatorioClientes,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:image_picker/image_picker.dart'; // Importe image_picker
-import 'dart:io'; // Para File
-import 'dart:typed_data'; // Para Uint8List
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:typed_data';
 
 class AdicionarBebidaScreen extends StatefulWidget {
   const AdicionarBebidaScreen({Key? key}) : super(key: key);
@@ -21,8 +21,7 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
   final _volumeController = TextEditingController();
   String? _categoriaSelecionada;
 
-  File?
-  _selectedImage; // Variável para armazenar o arquivo da imagem selecionada
+  File? _selectedImage;
 
   final List<String> categorias = [
     'Cerveja',
@@ -69,7 +68,7 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
             SnackBar(content: Text('Erro ao processar imagem: $e')),
           );
         }
-        return; // Impede a adição da bebida se houver um erro na imagem
+        return;
       }
     }
 
@@ -123,6 +122,7 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
     }
   }
 
+  //Limpar campos depois de usado
   @override
   void dispose() {
     _nomeController.dispose();
@@ -246,7 +246,6 @@ class _AdicionarBebidaScreenState extends State<AdicionarBebidaScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Botão para selecionar a imagem
                     ElevatedButton.icon(
                       onPressed: _pickImage,
                       icon: const Icon(Icons.image),

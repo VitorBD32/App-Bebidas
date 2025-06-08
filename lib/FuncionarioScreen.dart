@@ -395,14 +395,13 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
             const SizedBox(height: 16),
             Center(
               child: Wrap(
-                spacing: 20, // Horizontal space between buttons
-                runSpacing: 10, // Vertical space between lines of buttons
-                alignment: WrapAlignment.center, // Align items in the center
+                spacing: 20,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
                 children: [
                   ElevatedButton.icon(
-                    // Changed to ElevatedButton.icon
-                    icon: const Icon(Icons.add_circle_outline), // Added icon
-                    label: const Text('Adicionar Bebida'), // Added label
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: const Text('Adicionar Bebida'),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -413,47 +412,37 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      foregroundColor: Colors.white, // Added foreground color
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16, // Adjusted padding for icon buttons
-                        vertical: 12, // Adjusted padding for icon buttons
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                      ), // Added text style
+                      textStyle: const TextStyle(fontSize: 16),
                       shape: RoundedRectangleBorder(
-                        // Added shape
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
                   ElevatedButton.icon(
-                    // Changed to ElevatedButton.icon
-                    icon: const Icon(Icons.file_download), // Added icon
-                    label: const Text('Gerar Relatório Excel'), // Added label
+                    icon: const Icon(Icons.file_download),
+                    label: const Text('Gerar Relatório Excel'),
                     onPressed: _gerarRelatorioExcel,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white, // Added foreground color
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16, // Adjusted padding for icon buttons
-                        vertical: 12, // Adjusted padding for icon buttons
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                      ), // Added text style
+                      textStyle: const TextStyle(fontSize: 16),
                       shape: RoundedRectangleBorder(
-                        // Added shape
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                   ),
                   ElevatedButton.icon(
-                    // Changed to ElevatedButton.icon
-                    icon: const Icon(
-                      Icons.shopping_cart,
-                    ), // Changed icon to a cart for orders
-                    label: const Text('Gerenciar Pedidos'), // Added label
+                    icon: const Icon(Icons.shopping_cart),
+                    label: const Text('Gerenciar Pedidos'),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -464,16 +453,13 @@ class _FuncionarioScreenState extends State<FuncionarioScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white, // Added foreground color
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16, // Adjusted padding for icon buttons
-                        vertical: 12, // Adjusted padding for icon buttons
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                      ), // Added text style
+                      textStyle: const TextStyle(fontSize: 16),
                       shape: RoundedRectangleBorder(
-                        // Added shape
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
